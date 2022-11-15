@@ -22,6 +22,9 @@ def main():
     assert LENGTH % 4 == 0, "length must be divisible by 4"
 
     with gzip.open(args.output, 'wt') as fp:
+        sys.stderr.write("... 0")
+        sys.stderr.flush()
+
         for i in range(1, args.number + 1):
             if i % 100 == 0:
                 sys.stderr.write(u'\r\033[K')
