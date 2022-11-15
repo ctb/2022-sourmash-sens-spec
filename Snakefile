@@ -1,15 +1,16 @@
 rule all:
     input:
-        "basic-detection-100bp.csv"
+        "basic-detection-100bp.csv",
+        "basic-detection-10000bp.csv",
 
-rule make_curve:
+rule make_curve_wc:
     input:
-        "single.fa.gz"
+        genome="single.fa.gz"
     output:
-        "basic-detection-100bp.csv"
+        csv="basic-detection-{bp}bp.csv"
     shell: """
        ./scripts/make-detection-curve.py single.fa.gz \
-          -o basic-detection-100bp.csv
+          -o {output.csv} -r {wildcards.bp}
     """
 
 rule generate_single:

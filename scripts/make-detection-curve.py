@@ -71,6 +71,7 @@ def main():
     for i in range(NUM_FRACMINHASH):
         headers.append(f"smash_count_{i}")
     csv_w.writerow(headers)
+    csv_w.writerow([0, 0, 0, 0] + [0]*NUM_FRACMINHASH)
 
     n_reads = 0
     total_bp_in_reads = 0
