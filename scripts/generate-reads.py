@@ -42,8 +42,6 @@ def main():
     reads_mut = 0
     total_mut = 0
 
-    nucl = ['a', 'c', 'g', 't']
-
     print("Read in template genome {0} of length {1} from {2}".format(record["name"], len_genome, args.genome), file=sys.stderr)
     print("Generating {0} reads of length {1} for a target coverage of {2} with a target error rate of 1 in {3}".format(n_reads, READLEN, COVERAGE, ERROR_RATE), file=sys.stderr)
 
