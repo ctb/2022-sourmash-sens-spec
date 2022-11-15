@@ -1,2 +1,4 @@
 *~
 __pycache__
+.snakemake
+single.fa.gz
