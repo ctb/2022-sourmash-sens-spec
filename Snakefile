@@ -2,6 +2,7 @@ rule all:
     input:
         "basic-detection-100bp.csv",
         "basic-detection-10000bp.csv",
+        expand("genomes-100k.sketch.k{k}.sqldb", k=range(9, 21, 2)),
 
 rule make_curve_wc:
     input:
@@ -16,5 +17,28 @@ rule make_curve_wc:
 rule generate_single:
     output: "single.fa.gz"
     shell: """
-       ./scripts/generate-genomes.py -n 1 -o single.fa.gz
+       ./scripts/generate-genomes.py -n 1 -o {output}
     """
+
+rule genomes_100k:
+    output: protected("genomes-100k.fa.gz"),
+    shell: """
+       ./scripts/generate-genomes.py -n 100000 -o {output}
+    """
+
+rule sketch_100k:
+    input: "genomes-100k.fa.gz",
+    output: protected("genomes-100k.sketch.k{ksize}.zip"),
+    shell: """
+       sourmash sketch dna {input} -o {output} -p k={wildcards.ksize} \
+          --singleton
+    """
+
+rule make_sqldb:
+    input: "genomes-100k.{x}.zip",
+    output: protected("genomes-100k.{x}.sqldb"),
+    shell: """
+       sourmash sig cat {input} -o {output}
+    """
+
+           

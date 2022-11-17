@@ -1,4 +1,6 @@
 *~
 __pycache__
 .snakemake
-single.fa.gz
+*.zip
+*.sqldb
+*.fa.gz
