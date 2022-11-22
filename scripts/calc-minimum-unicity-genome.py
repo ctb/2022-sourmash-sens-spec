@@ -44,14 +44,13 @@ def main():
         max_size = len(hashes)
 
         hashval = hashes.pop()
-        minsize = len(db.hashval_to_idx[hashval])
-        for hashval in hashes:
-            minsize = min(minsize, len(db.hashval_to_idx[hashval]))
+        matches = set(db.hashval_to_idx[hashval])
 
-        print(sig.name.split(' ')[0], minsize, max_size, f"{minsize/max_size*100:.1f}%")
+        while hashes and len(matches) > 1:
+            matches.intersection_update(db.hashval_to_idx[hashval])
+            hashval = hashes.pop()
 
-        #name = sig.name.split(' ')[0]
-        #csv_w.writerow([name, sig.md5sum()] + matches_at)
+        print(hashes, len(matches))
 
 
 if __name__ == '__main__':
