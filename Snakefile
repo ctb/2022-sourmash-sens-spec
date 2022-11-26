@@ -3,6 +3,7 @@ rule all:
         "basic-detection-100bp.csv",
         "basic-detection-10000bp.csv",
         expand("genomes-100k.sketch.k{k}.sqldb", k=range(9, 21, 2)),
+        "gtdb.family_confused.sig.gz",
 
 rule make_curve_wc:
     input:
@@ -41,4 +42,9 @@ rule make_sqldb:
        sourmash sig cat {input} -o {output}
     """
 
-           
+rule count_coherent:
+    input: "gtdb-rs207.genomic.k31.sqldb",
+    output: "gtdb.family_confused.sig.gz"
+    shell: """
+       scripts/count-coherent-hashvals.py {input} -o {output}
+    """
