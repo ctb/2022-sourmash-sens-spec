@@ -27,11 +27,8 @@ def main():
     random.seed(args.seed)                  # make this reproducible, please.
 
     records = list(screed.open(args.genome))
-    assert len(records) == 1
-    record = records[0]
     
-    genome = record.sequence
-    len_genome = len(genome)
+    len_genome = sum([ len(x.sequence) for x in records ])
 
     print('genome size:', len_genome, file=sys.stderr)
     print('coverage:', COVERAGE, file=sys.stderr)
@@ -42,10 +39,10 @@ def main():
     reads_mut = 0
     total_mut = 0
 
-    print("Read in template genome {0} of length {1} from {2}".format(record["name"], len_genome, args.genome), file=sys.stderr)
-    print("Generating {0} reads of length {1} for a target coverage of {2} with a target error rate of 1 in {3}".format(n_reads, READLEN, COVERAGE, ERROR_RATE), file=sys.stderr)
+    print(f"Read in template genome of length {len_genome} from {args.genome}", file=sys.stderr)
+    print(f"Generating {n_reads} reads of length {READLEN} for a target coverage of {COVERAGE} with a target error rate of 1 in {ERROR_RATE}", file=sys.stderr)
 
-    for i, res in zip(range(n_reads), sequtils.generate_mutated_reads(genome,
+    for i, res in zip(range(n_reads), sequtils.generate_mutated_reads(records,
                                                                       READLEN,
                                                                       ERROR_RATE)):
         start, read, read_mutations = res
@@ -56,10 +53,10 @@ def main():
 
         seq_name = f"read{i}"
 
-        print('>{0} start={1},mutations={2}\n{3}'.format(seq_name, start, read_mutations, read), file=sys.stderr)
+        #print(f"@{seq_name} start={start},mutations={read_mutations}\n{read}\n+\n{'B'*READLEN}")
+        print(f">{seq_name} start={start},mutations={read_mutations}\n{read}")
 
-    print("%d of %d reads mutated; %d total mutations" % \
-          (reads_mut, n_reads, total_mut), file=sys.stderr)
+    print(f"{reads_mut} of {n_reads} reads mutated; {total_mut} total mutations", file=sys.stderr)
 
 
 if __name__ == '__main__':

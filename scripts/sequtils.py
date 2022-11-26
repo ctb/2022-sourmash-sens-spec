@@ -5,12 +5,20 @@ import screed
 nucl = ['a', 'c', 'g', 't']
 
 
-def generate_mutated_reads(genome, readlen, error_rate, nucl=tuple(nucl)):
-    len_genome = len(genome)
+def generate_mutated_reads(records, readlen, error_rate, nucl=tuple(nucl)):
+    records = [ r for r in records if len(r.sequence) >= readlen ]
+    len_genome = sum([ len(x.sequence) for x in records ])
+
+    target = []
+    for idx, r in enumerate(records):
+        target += [ idx ] * len(r.sequence)
 
     while 1:
-        start = random.randint(0, len_genome - readlen)
-        read = genome[start:start + readlen].upper()
+        contig_num = random.choice(target)
+        contig = records[contig_num].sequence
+
+        start = random.randint(0, len(contig) - readlen)
+        read = contig[start:start + readlen].upper()
 
         # reverse complement?
         if random.choice([0, 1]) == 0:
@@ -31,6 +39,7 @@ def generate_mutated_reads(genome, readlen, error_rate, nucl=tuple(nucl)):
                     read_mutations += 1
 
 
+        assert len(read) == readlen
         yield start, read, read_mutations
         
         
