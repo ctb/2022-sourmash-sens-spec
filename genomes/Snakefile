@@ -1,0 +1,71 @@
+import glob
+
+genomes, = glob_wildcards('{g}.fna.gz')
+print(genomes)
+
+readlength=10000
+coverage=5
+
+rule all:
+    input:
+        expand("reads/{g}.reads.l100.C1.fa.gz", g=genomes),
+        expand("counts/{g1}.x.{g2}.l{l}.C{C}.count", g1=genomes, g2=genomes,
+               l=readlength, C=coverage),
+        f"map.l{readlength}.C{coverage}.mat.matrix.png",
+
+
+rule make_mat:
+    input:
+        countfile = expand("counts/{g2}.x.{g1}.l{L}.C{C}.count",
+                           g1=genomes, g2=genomes,
+                           L=readlength, C=coverage)
+    output:
+        f"map.l{readlength}.C{coverage}.mat",
+    shell: """
+        ../../scripts/make-numpy-matrix.py -r {readlength} -C {coverage} \
+            *.fna.gz -o {output}
+    """
+
+
+rule plot:
+    input:
+        f"map.l{readlength}.C{coverage}.mat",
+    output:
+        f"map.l{readlength}.C{coverage}.mat.matrix.png",
+    shell: """
+        sourmash plot {input}
+    """
+
+
+rule make_reads:
+    input:
+        genome = "{g}.fna.gz"
+    output:
+        reads = "reads/{g}.reads.l{len}.C{cov}.fa.gz"
+    shell: """
+        ../../scripts/generate-reads.py {input.genome} \
+            -r {wildcards.len} -C {wildcards.cov} -e 0 | gzip > {output.reads}
+    """
+
+# from https://www.metagenomics.wiki/tools/samtools/number-of-reads-in-bam-file
+# and https://www.biostars.org/p/432137/
+rule map_reads:
+    input:
+        genome = "{g1}.fna.gz",
+        reads = "reads/{g2}.reads.l{len}.C{cov}.fa.gz",
+    output:
+        sam = "counts/{g2}.x.{g1}.l{len}.C{cov}.sam",
+    shell: """
+        minimap2 -ax sr --secondary=no -t 4 {input.genome} {input.reads} > {output.sam}
+    """
+
+
+rule count_mapped_reads:
+    input:
+        sam = "counts/{g2}.x.{g1}.l{len}.C{cov}.sam",
+    output:
+        countfile = "counts/{g2}.x.{g1}.l{len}.C{cov}.count",
+    shell: """
+        # exclude supplementary alignments
+        samtools view -c -F 2052 {input.sam} > {output.countfile}
+    """

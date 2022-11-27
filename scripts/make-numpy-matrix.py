@@ -37,14 +37,15 @@ def main():
         g1_idx = genome_idx[g1]
         for g2 in genome_files:
             g2_idx = genome_idx[g2]
-            countfile = f"counts/{g1}.x.{g2}.l{args.readlen}.C{args.coverage}.count"
+            countfile = f"counts/{g2}.x.{g1}.l{args.readlen}.C{args.coverage}.count"
             assert os.path.exists(countfile), countfile
             with open(countfile, "rt") as fp:
                 mapcount = int(fp.read())
-            readcount = readcounts[g1]
+            readcount = readcounts[g2]
 
             f = mapcount / readcount
 
+            assert f <= 1.0, (g1, g2, mapcount, readcount)
             mat[g2_idx, g1_idx] = f
 
     print(f"saving to {args.output_prefix} and {args.output_prefix}.labels.txt")
