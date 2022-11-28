@@ -26,10 +26,16 @@ def main():
         print(f"Removing query '{query_filename}' from against list.")
         against_filenames.remove(query_filename)
 
-    factory = _signatures_for_sketch_factory([f'k={args.ksize},scaled=1'], 'dna')
+    param_str = f'k={args.ksize},scaled=1'
+    print("using:", param_str)
+
+    factory = _signatures_for_sketch_factory([param_str], 'dna')
     sigs = factory()
     assert len(sigs) == 1
     query_sig = sigs[0]
+
+    assert query_sig.minhash.ksize == args.ksize
+    assert query_sig.minhash.scaled == 1
 
     consume(query_sig, query_filename)
     print(len(query_sig.minhash))
