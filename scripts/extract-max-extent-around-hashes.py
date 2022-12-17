@@ -6,7 +6,8 @@ extract the maximum extent of actual DNA sequence from the contigs that
 would generate the hashes in the query sig. For example, for a single hash,
 this would be all DNA sequence between the neighboring hashes, but NOT
 including the k-mers that generated those neighboring hashes. If multiple
-hashes, it would include all sequence.
+hashes in a row matched, it would include all sequence up to the surrounding
+(non-matching) k-mers.
 
 The motivation is to extract the maximum potentially alignable sequence
 when two genomes share some hashes, but might be useful for other purposes,
