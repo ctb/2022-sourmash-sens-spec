@@ -1,14 +1,30 @@
 #! /usr/bin/env python
+"""
+Given a query sig, and a target set of contigs,
+
+extract the maximum extent of actual DNA sequence from the contigs that
+would generate the hashes in the query sig. For example, for a single hash,
+this would be all DNA sequence between the neighboring hashes, but NOT
+including the k-mers that generated those neighboring hashes. If multiple
+hashes, it would include all sequence.
+
+The motivation is to extract the maximum potentially alignable sequence
+when two genomes share some hashes, but might be useful for other purposes,
+too.
+
+Warning: not yet well tested! Smoketests seem to pass :shrug:
+"""
 import sys
 import argparse
 import screed
 import sourmash
 from collections import defaultdict, Counter
 from interval import interval
+import gzip
 
 # QUESTIONS: do hashes tend to be in runs?
 # TODO: add tests...
-
+# * query = genome => all same
 
 def extract_runs(hash_positions, len_sequence, *, min_runcount=1):
     ivals = []
@@ -23,7 +39,7 @@ def extract_runs(hash_positions, len_sequence, *, min_runcount=1):
 
     i = 1
     while i < len(hash_positions):
-        pos, in_query = hash_positions[i]
+        pos, in_query, *rest = hash_positions[i]
 
         if in_query:
             if last_was_in_query:
@@ -59,6 +75,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('contigs')
     p.add_argument('sigfile')
+    p.add_argument('-o', '--output-contigs')
     args = p.parse_args()
 
     idx = sourmash.load_file_as_index(args.sigfile)
@@ -68,6 +85,7 @@ def main():
     query_sig = sigs[0]
     query_hashes = set(query_sig.minhash.hashes)
 
+    filtered_seqs = []
     for record in screed.open(args.contigs):
         # calculate basic FracMinHash
         background_mh = query_sig.minhash.copy_and_clear()
@@ -87,7 +105,7 @@ def main():
             hash_positions = []
             for pos, hashval in enumerate(hash_iter):
                 # first, filter on whether it belongs in sketch
-                if hashval in background_hashes:
+                if hashval and hashval in background_hashes:
                     in_query = False
 
                     # now, figure out if it's one of our query hashes
@@ -95,7 +113,7 @@ def main():
                         in_query = True
 
                     # record!
-                    hash_positions.append((pos, in_query))
+                    hash_positions.append((pos, in_query, hashval))
 
             # now, convert to intervals
             runs = extract_runs(hash_positions, len(record.sequence))
@@ -105,11 +123,28 @@ def main():
 
             total_run_seq = 0
             for ival in runs:
-                start, end = ival[0]
-                #print(end - start + 1)
+                start, end = map(int, ival[0])
                 total_run_seq += end - start + 1
+                filtered_seqs.append((record.name, record.sequence[start:end + 1]))
 
             print(record.name, len(record.sequence), total_run_seq)
+
+    # double check?
+    check_mh = query_sig.minhash.copy_and_clear()
+    for (name, seq) in filtered_seqs:
+        check_mh.add_sequence(seq)
+
+    # note: there may be hashes in query that are NOT IN this genome!
+    assert check_mh.contained_by(query_sig.minhash) == 1.0
+
+    # output?
+    if args.output_contigs:
+        xopen = open
+        if args.output_contigs.endswith('.gz'):
+            xopen = gzip.open
+        with xopen(args.output_contigs, 'wt') as fp:
+            for n, (name, seq) in enumerate(filtered_seqs):
+                fp.write(f">{name}.{n}\n{seq}\n")
 
 
 if __name__ == '__main__':
